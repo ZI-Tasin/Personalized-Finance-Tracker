@@ -25,7 +25,7 @@ exports.registerUser = async (req, res) => {
         }
 
         // Create a new user
-        const User = await User.create({
+        const newUser = await User.create({
             fullName,
             email,
             password,
@@ -34,7 +34,7 @@ exports.registerUser = async (req, res) => {
 
         res.status(201).json({ 
             id: User._id,
-            User,
+            user: newUser,
             token: generateToken(User._id) // Generate and return JWT token
          });
     } catch (error) {
@@ -42,7 +42,6 @@ exports.registerUser = async (req, res) => {
         .json({ message: 'Server error', error: error.message });
     }
 };
-
 
 // Login an existing user
 exports.loginUser = async (req, res) => {
@@ -61,7 +60,7 @@ exports.loginUser = async (req, res) => {
         }
 
         // Check if password is correct
-        const isMatch = await user.matchPassword(password);
+        const isMatch = await user.comparePassword(password);
         if (!isMatch) {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
