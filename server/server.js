@@ -4,6 +4,7 @@ const express = require('express');     // Import express
 const cors = require('cors');         // Import cors (Cross-Origin Resource Sharing)
 const path = require('path');        // Import path
 const connectDB = require('./config/db'); // Import the database connection function
+const authRoutes = require('./routes/authRoutes'); // Import authentication routes
 
 // create an express application
 // This is the main entry point of the server application
@@ -21,6 +22,11 @@ app.use(
 app.use(express.json()); // Middleware to parse JSON request bodies
 
 connectDB(); // Function to connect to the MongoDB database
+
+app.use('/api/v1/auth', authRoutes); // Route for authentication-related endpoints
+
+// Serve static files from the 'uploads' directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const PORT = process.env.PORT || 5000; // Set the port from environment variable or default to 5000
 
