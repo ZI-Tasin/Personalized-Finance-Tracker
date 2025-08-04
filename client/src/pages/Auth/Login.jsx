@@ -1,19 +1,24 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import AuthLayout from '../../components/layouts/AuthLayout';
 import { useNavigate } from 'react-router-dom';
 import Input from '../../components/Inputs/Input';
 import { validateEmail } from '../../utils/helper';
 import { Link } from 'react-router-dom';
+import axiosInstance from '../../utils/axiosInstance';
+import { API_PATHS } from '../../utils/apiPaths';
+import { UserContext } from '../../context/userContext';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(null);
 
+    const { updateUser } = useContext(UserContext);
+
     const navigate = useNavigate();
     
     // Handle login logic here
-    // This is a placeholder function, you would typically make an API call here
+    // This is a placeholder function for making an API call here
     const handleLogin = async (e) => {
         e.preventDefault();
         setError(null); // Reset error state before proceeding
@@ -37,6 +42,25 @@ const Login = () => {
         }
 
         // TODO: Call login API here
+        try {
+            const response = await axiosInstance.post(API_PATHS.AUTH.LOGIN, {
+                email,
+                password,
+            });
+            const { token, user } = response.data;
+
+            if (token) {
+                localStorage.setItem('token', token);
+                updateUser(user); // Update user context with the logged-in user data
+                navigate('/dashboard'); // Redirect to dashboard on successful login
+            }
+        } catch (error) {
+            if (error.response && error.response.data.message) {
+                setError(error.response.data.message); // Set error message from API response
+            } else {
+                setError('An error occurred while logging in. Please try again later.');
+            }
+        }
     }
 
     return (

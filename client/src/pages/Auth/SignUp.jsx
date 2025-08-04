@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import AuthLayout from '../../components/layouts/AuthLayout';
 import { useNavigate } from 'react-router-dom';
 import Input from '../../components/Inputs/Input';
 import { validateEmail } from '../../utils/helper';
 import { Link } from 'react-router-dom';
+import axiosInstance from '../../utils/axiosInstance';
+import { API_PATHS } from '../../utils/apiPaths';
 import ProfilePicSelector from '../../components/Inputs/ProfilePicSelector';
+import UploadImage from '../../utils/uploadImage';
+import { UserContext } from '../../context/userContext';
 
 const SignUp = () => {
     const [profilePic, setProfilePic] = useState(null);
@@ -13,11 +17,14 @@ const SignUp = () => {
     const [password, setPassword] = useState('');
     
     const [error, setError] = useState(null);
+
+    const { updateUser } = useContext(UserContext);
     const navigate = useNavigate();
 
     // Handle Sign Up Form Submit
     const handleSignUp = async (e) => {
         e.preventDefault();
+        setError(null); // Reset error state before proceeding
 
         // Check for empty fields
         if (!fullName || !email || !password) {
@@ -37,15 +44,36 @@ const SignUp = () => {
             return;
         }
 
+        let profileImageUrl = null; // Initialize profile image URL
+
         // If validation passes, proceed with sign up
         try {
-            // TODO: Implement API call for user registration.
-            // TODO: Implement file upload logic for `profilePic`.
 
-            // Placeholder navigation
-            navigate('/dashboard');
+            if (profilePic) {
+                const imgUploadRes = await UploadImage(profilePic);
+                profileImageUrl = imgUploadRes.imageUrl || null;
+            }
+
+            const response = await axiosInstance.post(API_PATHS.AUTH.REGISTER, {
+                fullName,
+                email,
+                password,
+                profileImageUrl,
+            });
+
+            const { token, user } = response.data;
+
+            if (token) {
+                localStorage.setItem('token', token);
+                updateUser(user); // Update user context with the new user data
+                navigate('/dashboard');
+            }
         } catch (error) {
-            setError('Sign up failed. Please try again.');
+            if (error.response && error.response.data.message) {
+                setError(error.response.data.message); // Set error message from API response
+            } else {
+                setError('An unexpected error occurred. Please try again later.');
+            }
         }
     }
 
