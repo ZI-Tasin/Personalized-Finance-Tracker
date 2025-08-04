@@ -1,35 +1,53 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+// This file contains the main application component for the Personalized Finance Tracker client.
+// It sets up the routing for the application using React Router and imports necessary pages.
 
-function App() {
-  const [count, setCount] = useState(0)
+import React from 'react';
 
+// Importing necessary libraries and components
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from 'react-router-dom';
+
+// Importing pages
+import Login from './pages/Auth/Login';
+import SignUp from './pages/Auth/SignUp';
+import Home from './pages/Dashboard/Home';
+import Income from './pages/Dashboard/Income';
+import Expense from './pages/Dashboard/Expense';
+
+// Main App component: sets up the routing for the application
+const App = () => {
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <div>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Root />} />
+          <Route path="/login" exact element={<Login />} />
+          <Route path="/signUp" exact element={<SignUp />} />
+          <Route path="/dashboard" exact element={<Home />} />
+          <Route path="/income" exact element={<Income />} />
+          <Route path="/expense" exact element={<Expense />} />
+        </Routes>
+      </Router>
+    </div>
+  );
+};
 
-export default App
+export default App;
+
+const Root = () => {
+  // This component handles the initial route redirection.
+  // It checks for an auth token in localStorage to decide if the user
+  // should be sent to the dashboard or the login page.
+  const isAuthenticated = !!localStorage.getItem('token');
+
+  // Redirect to dashboard if authenticated, otherwise redirect to login
+  return isAuthenticated ? (
+    <Navigate to="/dashboard" />
+  ) : (
+    <Navigate to="/login" />
+  );
+};
