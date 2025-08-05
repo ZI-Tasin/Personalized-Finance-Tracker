@@ -29,10 +29,15 @@ const Income = () => {
     setLoading(true);
 
     try {
-      const response = await axiosInstance.get(API_PATHS.INCOME.GET_ALL_INCOME);
-      setIncomeData(response.data);
+      const response = await axiosInstance.get(
+        `${API_PATHS.INCOME.GET_ALL_INCOME}`
+      );
+
+      if (response.data) {
+        setIncomeData(response.data);
+      }
     } catch (error) {
-      toast.error("Failed to fetch income details");
+      console.log("Failed to fetch income details", error);
     } finally {
       setLoading(false);
     }
@@ -81,7 +86,7 @@ const Income = () => {
       await axiosInstance.delete(API_PATHS.INCOME.DELETE_INCOME(id));
 
       setOpenDeleteAlert({ show: false, data: null });
-      toast.success("Income deleted successfully");
+      toast.success("Income details deleted successfully");
       fetchIncomeDetails(); // Refresh income data after deletion
     } catch (error) {
       console.error(
