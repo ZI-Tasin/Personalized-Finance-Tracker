@@ -1,5 +1,5 @@
 const XLSX = require('xlsx'); // Import the XLSX library for Excel file handling
-const Income = require('../models/Income');
+const Income = require('../models/Income'); // Import the Income model
 
 
 // Add Income source

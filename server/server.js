@@ -6,6 +6,7 @@ const path = require('path');        // Import path
 const connectDB = require('./config/db'); // Import the database connection function
 const authRoutes = require('./routes/authRoutes'); // Import authentication routes
 const incomeRoutes = require('./routes/incomeRoutes'); // Import income-related routes
+const expenseRoutes = require('./routes/expenseRoutes'); // Import expense-related routes
 
 // create an express application
 // This is the main entry point of the server application
@@ -26,6 +27,7 @@ connectDB(); // Function to connect to the MongoDB database
 
 app.use('/api/v1/auth', authRoutes); // Route for authentication-related endpoints
 app.use('/api/v1/income', incomeRoutes); // Route for income-related endpoints
+app.use('/api/v1/expense', expenseRoutes); // Route for expense-related endpoints
 
 // Serve static files from the 'uploads' directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
