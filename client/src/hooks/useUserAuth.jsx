@@ -1,23 +1,39 @@
 import { useEffect, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { UserContext } from '../context/userContext';
+import { useNavigate } from 'react-router-dom';
+import axiosInstance from '../utils/axiosInstance';
+import { API_PATHS } from '../utils/apiPaths';
 
-// Custom hook to protect routes that require authentication.
+
 export const useUserAuth = () => {
+    const { user, updateUser, clearUser } = useContext(UserContext);
     const navigate = useNavigate();
-    const { user } = useContext(UserContext);
 
     useEffect(() => {
-        // Check for the token in localStorage as the primary guard.
-        // This prevents a flicker of the protected page on refresh.
-        const token = localStorage.getItem('token');
-        
-        if (!token) {
-            // If there's no token, immediately redirect to the login page.
-            navigate('/login');
-        }
-        
-        // The dependency array ensures this effect runs whenever the navigate function
-        // or the user object from context changes.
-    }, [user, navigate]);
+        if (user) return;
+
+        let isMounted = true; // To prevent state updates if the component is unmounted
+
+        const fetchUserInfo = async () => {
+            try {
+                const response = await axiosInstance.get(API_PATHS.AUTH.GET_USER_INFO);
+            
+                if (isMounted && response.data) {
+                    updateUser(response.data);
+                }
+            } catch (error) {
+                console.error("Error fetching user info:", error);
+                if (isMounted) {
+                    clearUser();
+                    navigate('/login');
+                }
+            }
+        };
+
+        fetchUserInfo();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [user, updateUser, clearUser, navigate]);
 };

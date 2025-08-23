@@ -19,60 +19,48 @@ const Home = () => {
     const [error, setError] = useState(null);
     const navigate = useNavigate();
 
-    // useEffect hook to fetch dashboard data when the component mounts
+    const fetchDashboardData = async () => {
+      setLoading(true);
+
+      try {
+          const response = await axiosInstance.get(
+            `${API_PATHS.DASHBOARD.GET_DATA}`
+          );
+
+          if (response.data) {
+              setDashboardData(response.data);
+          }
+      } catch (error) {
+          console.log('Failed to fetch dashboard data. Please try again.', error);
+      } finally {
+          setLoading(false);
+      }
+    };
+
     useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                // TODO: In the future, you will create and call the dashboard API endpoint
-                // const response = await axiosInstance.get(API_PATHS.DASHBOARD.GET_DATA);
-                // setDashboardData(response.data);
+      fetchDashboardData();
+      return () => {};
+    }, []);
 
-                // For now, we will use mock/placeholder data to build the UI
-                const mockData = {
-                    totalBalance: 15000,
-                    totalIncome: 20000,
-                    totalExpenses: 5000,
-                    recentTransactions: [],
-                    last30DaysExpenses: { transactions: [] }
-                };
-                setDashboardData(mockData);
-
-            } catch (error) {
-                setError('Failed to fetch dashboard data.');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchDashboardData();
-    }, []); // The empty dependency array means this runs only once on mount
-
-    // Render loading state
     if (loading) {
-        return <DashboardLayout><div>Loading...</div></DashboardLayout>;
+        return <DashboardLayout><div>Loading dashboard...</div></DashboardLayout>;
     }
 
-    // Render error state
     if (error) {
         return <DashboardLayout><div>{error}</div></DashboardLayout>;
     }
 
     return (
-        <DashboardLayout>
-          <div>
-            <div>
-              <RecentIncomeWithChart
-                data={dashboardData?.last60DaysIncome?.transactions?.slice(0, 4) || []}
-                totalIncome={dashboardData?.totalIncome || 0}
-              />
-
-              <RecentIncome
-                transactions={dashboardData?.last60DaysIncome?.transactions || []}
-                onSeeMore={() => navigate('/income')}
-              />
+        <DashboardLayout activeMenu="Dashboard">
+            <div className="my-5 mx-auto">
+              <h2 className="text-xl font-bold mb-4">Dashboard API Data Successfully Loaded</h2>
+              <p className="mb-4 text-gray-600">I'll implement the full UI in the next sprint. For now this shows the raw data received from the backend:</p>
+              
+              {/* The <pre> tag is perfect for displaying formatted JSON */}
+              <pre className="bg-gray-100 p-4 rounded-lg text-sm overflow-x-auto">
+                {JSON.stringify(dashboardData, null, 2)}
+              </pre>
             </div>
-          </div>
-            
         </DashboardLayout>
     );
 };
