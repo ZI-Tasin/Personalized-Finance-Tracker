@@ -5,6 +5,7 @@ const {
     registerUser,
     loginUser,
     getUserInfo,
+    updateProfilePicture,
 } = require('../controllers/authController'); // Import authentication controller functions
 const upload = require('../middleware/uploadMiddleware');
 
@@ -26,5 +27,7 @@ router.post('/upload-image', upload.single('image'), (req, res) => {
     res.status(200)
     .json({ message: 'File uploaded successfully', file: req.file, url: imageUrl });
 });
+
+router.post('/update-profile-pic', protect, upload.single('image'), updateProfilePicture);
 
 module.exports = router; // Export the router

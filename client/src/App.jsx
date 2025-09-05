@@ -9,6 +9,7 @@ import {
   Routes,
   Route,
   Navigate,
+  Outlet,
 } from 'react-router-dom';
 
 // Importing pages
@@ -20,6 +21,13 @@ import Expense from './pages/Dashboard/Expense';
 import UserProvider from './context/userContext';
 import { Toaster } from 'react-hot-toast';
 
+const ProtectedRoutes = () => {
+    const isAuthenticated = !!localStorage.getItem('token');
+    // If the user is authenticated, Outlet renders the child route (e.g., Home).
+    // Otherwise, it redirects them to the login page.
+    return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
+};
+
 // Main App component: sets up the routing for the application
 const App = () => {
   return (
@@ -27,12 +35,17 @@ const App = () => {
       <div>
         <Router>
           <Routes>
-            <Route path="/" element={<Root />} />
-            <Route path="/login" exact element={<Login />} />
-            <Route path="/signUp" exact element={<SignUp />} />
-            <Route path="/dashboard" exact element={<Home />} />
-            <Route path="/income" exact element={<Income />} />
-            <Route path="/expense" exact element={<Expense />} />
+            {/* Unprotected Routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<SignUp />} />
+
+            {/* Protected Routes */}
+            <Route element={<ProtectedRoutes />}>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<Home />} />
+              <Route path="/income" element={<Income />} />
+              <Route path="/expense" element={<Expense />} />
+            </Route>
           </Routes>
         </Router>
       </div>

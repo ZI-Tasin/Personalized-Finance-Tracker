@@ -21,61 +21,55 @@ const SignUp = () => {
     const { updateUser } = useContext(UserContext);
     const navigate = useNavigate();
 
-    // Handle Sign Up Form Submit
     const handleSignUp = async (e) => {
         e.preventDefault();
-        setError(null); // Reset error state before proceeding
+        setError(null);
 
-        // Check for empty fields
         if (!fullName || !email || !password) {
             setError('All fields are required.');
             return;
         }
 
-        // Validate email format
         if (!validateEmail(email)) {
             setError('Please enter a valid email address.');
             return;
         }
 
-        // Validate password length
         if (password.length < 8) {
             setError('Password must be at least 8 characters long.');
             return;
         }
 
-        let profileImageUrl = null; // Initialize profile image URL
-
-        // If validation passes, proceed with sign up
         try {
+        let profileImageUrl = null;
 
-            if (profilePic) {
-                const imgUploadRes = await UploadImage(profilePic);
-                profileImageUrl = imgUploadRes.imageUrl || null;
-            }
+        if (profilePic) {
+            const imgUploadRes = await UploadImage(profilePic);
+            profileImageUrl = imgUploadRes.url || null;
+        }
 
-            const response = await axiosInstance.post(API_PATHS.AUTH.REGISTER, {
-                fullName,
-                email,
-                password,
-                profileImageUrl,
-            });
+        const response = await axiosInstance.post(API_PATHS.AUTH.REGISTER, {
+            fullName,
+            email,
+            password,
+            profileImageUrl,
+        });
 
-            const { token, user } = response.data;
+        const { token, user } = response.data;
 
-            if (token) {
-                localStorage.setItem('token', token);
-                updateUser(user); // Update user context with the new user data
-                navigate('/dashboard');
-            }
-        } catch (error) {
-            if (error.response && error.response.data.message) {
-                setError(error.response.data.message); // Set error message from API response
-            } else {
-                setError('An unexpected error occurred. Please try again later.');
-            }
+        if (token) {
+            localStorage.setItem('token', token);
+            updateUser(user);
+            navigate('/dashboard');
+        }
+    } catch (error) {
+        if (error.response && error.response.data.message) {
+            setError(error.response.data.message);
+        } else {
+            setError('An unexpected error occurred. Please try again later.');
         }
     }
+};
 
     return (
         <AuthLayout>
@@ -137,10 +131,8 @@ const SignUp = () => {
                     </p>
                 </form>
             </div>
-
         </AuthLayout>
-    );
+    )
 };
-
 
 export default SignUp;

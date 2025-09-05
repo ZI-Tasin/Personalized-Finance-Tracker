@@ -91,3 +91,35 @@ exports.getUserInfo = async (req, res) => {
         .json({ message: 'Server error', error: error.message });
     }
 }
+
+exports.updateProfilePicture = async (req, res) => {
+    try {
+        // The user's ID is available from the 'protect' middleware.
+        const userId = req.user.id;
+        
+        // If no file was uploaded, it'll return an error.
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded.' });
+        }
+
+        // Construct full URL.
+        const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+
+        // Find the user by their ID and update only the profileImageUrl field.
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { profileImageUrl: imageUrl },
+            { new: true }
+        ).select('-password');
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        // Send back the updated user object so the frontend can update its state.
+        res.status(200).json(updatedUser);
+
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+}

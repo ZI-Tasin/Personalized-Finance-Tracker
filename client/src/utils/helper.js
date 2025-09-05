@@ -1,6 +1,5 @@
 import moment from 'moment';
 
-
 export const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(String(email).toLowerCase());
@@ -28,6 +27,18 @@ export const addThousandSeparator = (num) => {
     return fractionalPart
         ? `${formattedIntegerPart}.${fractionalPart}`
         : formattedIntegerPart;
+};
+
+
+export const prepareIncomeChartData = (transactions = []) => {
+    const sortedData = [...transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    const chartData = sortedData.map((item) => ({
+        date: moment(item.date).format('Do MMM'),
+        amount: item.amount,
+    }));
+
+    return chartData;
 };
 
 
