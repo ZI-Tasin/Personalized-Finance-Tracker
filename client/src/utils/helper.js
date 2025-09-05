@@ -1,9 +1,11 @@
 import moment from 'moment';
 
+
 export const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(String(email).toLowerCase());
 };
+
 
 export const getInitials = (name) => {
     if (!name) return '';
@@ -16,6 +18,19 @@ export const getInitials = (name) => {
     return initials.toUpperCase();
 };
 
+
+export const addThousandSeparator = (num) => {
+    if (num === null || isNaN(num)) return "";
+
+    const [integerPart, fractionalPart] = num.toString().split('.');
+
+    const formattedIntegerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return fractionalPart
+        ? `${formattedIntegerPart}.${fractionalPart}`
+        : formattedIntegerPart;
+};
+
+
 export const prepareExpenseLineChartData = (data = []) => {
     const sortedData = [...data].sort((a, b) => new Date(a.date) - new Date(b.date));
 
@@ -27,3 +42,4 @@ export const prepareExpenseLineChartData = (data = []) => {
 
     return chartData;
 };
+
