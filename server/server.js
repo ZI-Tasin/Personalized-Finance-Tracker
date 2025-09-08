@@ -8,6 +8,7 @@ const authRoutes = require('./routes/authRoutes'); // Import authentication rout
 const incomeRoutes = require('./routes/incomeRoutes'); // Import income-related routes
 const expenseRoutes = require('./routes/expenseRoutes'); // Import expense-related routes
 const dashboardRoutes = require('./routes/dashboardRoutes'); // Import dashboard-related routes
+const budgetRoutes = require('./routes/budgetRoutes'); // Import budget-related routes
 
 // create an express application
 // This is the main entry point of the server application
@@ -30,6 +31,7 @@ app.use('/api/v1/auth', authRoutes); // Route for authentication-related endpoin
 app.use('/api/v1/income', incomeRoutes); // Route for income-related endpoints
 app.use('/api/v1/expense', expenseRoutes); // Route for expense-related endpoints
 app.use('/api/v1/dashboard', dashboardRoutes); // Route for dashboard-related endpoints
+app.use('/api/v1/budget', budgetRoutes); // Route for budget-related endpoints
 
 
 // Serve static files from the 'uploads' directory

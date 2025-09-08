@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo  } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../utils/axiosInstance';
 import { API_PATHS } from '../../utils/apiPaths';
+import { toast } from 'react-hot-toast';
 
 import { useUserAuth } from '../../hooks/useUserAuth';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
@@ -57,6 +58,41 @@ const Home = () => {
         if (!dashboardData) return [];
         return prepareExpenseLineChartData(dashboardData.last30DaysExpenses?.transactions);
     }, [dashboardData]);
+
+    useEffect(() => {
+      const checkBudgets = async () => {
+        try {
+          const response = await axiosInstance.get(API_PATHS.BUDGET.GET_BUDGETS);
+          const budgets = response.data;
+
+          if (budgets && budgets.length > 0) {
+              budgets.forEach(budget => {
+                  const percentageSpent = budget.amount > 0 ? (budget.spentAmount / budget.amount) * 100 : 0;
+                  
+                  // I'll create a unique key for each budget warning for this session.
+                  const warningKey = `budget-warning-${budget._id}`;
+
+                  // THIS IS THE FIX: I will only show the toast if it's over 90% AND
+                  // if I haven't already shown a warning for this specific budget during this session.
+                  if (percentageSpent > 90 && !sessionStorage.getItem(warningKey)) {
+                      toast.error(
+                          `Warning: You have spent over 90% of your budget for "${budget.category}"!`,
+                          { duration: 6000 }
+                      );
+                      // After showing the warning, I'll mark it as seen in sessionStorage.
+                      sessionStorage.setItem(warningKey, 'true');
+                  }
+              });
+          }
+        } catch (error) {
+          console.error("Could not check budgets for notifications.", error);
+        }
+    };
+
+      if (dashboardData) {
+          checkBudgets();
+      }
+    }, [dashboardData]); // The dependency array ensures this runs when dashboardData is available.
 
     if (loading) {
         return <DashboardLayout><div>Loading dashboard...</div></DashboardLayout>;

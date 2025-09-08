@@ -62,20 +62,37 @@ const Expense = () => {
 
     try {
       await axiosInstance.post(API_PATHS.EXPENSE.ADD_EXPENSE, {
-        category,
-        amount,
-        date,
-        icon
+          category,
+          amount,
+          date,
+          icon
       });
 
       setOpenAddExpenseModal(false);
       toast.success("Expense added successfully");
-      fetchExpenseDetails(); // Refresh expense data after adding
+      fetchExpenseDetails(); // Refresh the expense list.
+
+      // IMMEDIATE NOTIFICATIONS
+      // After successfully adding the expense, silently check the budget status.
+      const budgetResponse = await axiosInstance.get(API_PATHS.BUDGET.GET_BUDGETS);
+      const budgets = budgetResponse.data;
+
+      // Find the specific budget that matches the category of the expense just added.
+      const relevantBudget = budgets.find(b => b.category.toLowerCase() === category.toLowerCase());
+      
+      if (relevantBudget) {
+        const percentageSpent = relevantBudget.amount > 0 ? (relevantBudget.spentAmount / relevantBudget.amount) * 100 : 0;
+        
+        // If this new expense pushed the spending over 90%, show a warning immediately.
+        if (percentageSpent > 90) {
+            toast.error(
+                `Warning: You have now spent over 90% of your budget for "${relevantBudget.category}"!`,
+                { duration: 6000 }
+            );
+        }
+      }
     } catch (error) {
-      console.error(
-        "Failed to add expense",
-        error.response?.data?.message || error.message
-      );
+      console.error("Failed to add expense", error.response?.data?.message || error.message);
     }
   };
 

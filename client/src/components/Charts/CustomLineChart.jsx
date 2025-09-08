@@ -5,11 +5,14 @@ const CustomLineChart = ({ data }) => {
     
     const CustomTooltip = ({ active, payload }) => {
         if (active && payload && payload.length) {
+            // The original data for the bar is nested inside the 'payload' property.
+            const dataPoint = payload[0].payload; 
             return (
                 <div className="bg-white shadow-md rounded p-2 border border-gray-300">
-                    <p className="text-xs font-semibold text-purple-800 mb-1">{payload[0].payload.category}</p>
+                    <p className="text-xs font-semibold text-purple-800 mb-1">{dataPoint.category}</p>
                     <p className="text-sm text-gray-600">
-                        Amount: <span className="text-sm font-medium text-gray-900">{payload[0].amount}</span>
+                        {/* Accessing the 'amount' from the dataPoint object. */}
+                        Amount: <span className="text-sm font-medium text-gray-900">${dataPoint.amount}</span>
                     </p>
                 </div>
             );
