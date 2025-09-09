@@ -1,5 +1,4 @@
 const mongoose = require('mongoose'); // Import mongoose for MongoDB object modeling
-
 const bcrypt = require('bcryptjs'); // Import bcrypt for password hashing
 
 const userSchema = new mongoose.Schema({

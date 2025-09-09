@@ -12,19 +12,16 @@ const generateToken = (id) => {
 exports.registerUser = async (req, res) => {
     const { fullName, email, password, profileImageUrl } = req.body;
 
-    // Validate input fields
     if (!fullName || !email || !password) {
         return res.status(400).json({ message: 'Please fill all fields' });
     }
 
     try {
-        // Check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        // Create a new user
         const newUser = await User.create({
             fullName,
             email,
@@ -32,11 +29,17 @@ exports.registerUser = async (req, res) => {
             profileImageUrl
         });
 
-        res.status(201).json({ 
-            id: User._id,
-            user: newUser,
-            token: generateToken(User._id) // Generate and return JWT token
-         });
+        const userToReturn = await User.findById(newUser._id).select('-password');
+
+        if (userToReturn) {
+            res.status(201).json({
+                user: userToReturn,
+                token: generateToken(userToReturn._id)
+            });
+        } else {
+            res.status(400).json({ message: 'Invalid user data' });
+        }
+
     } catch (error) {
         res.status(500)
         .json({ message: 'Server error', error: error.message });
