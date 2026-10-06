@@ -13,7 +13,9 @@ const BudgetSchema = new mongoose.Schema({
     },
     amount: {
         type: Number,
-        required: true
+        required: true,
+        min: 0.01,
+        max: 1e12,
     },
     // Storing the month as the first day of that month for consistent queries.
     month: {

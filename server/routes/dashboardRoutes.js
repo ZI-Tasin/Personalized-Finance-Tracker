@@ -4,7 +4,6 @@ const { getDashboardData } = require("../controllers/dashboardController"); // I
 
 const router = express.Router(); // Create a new router
 
-// Protected route to get dashboard data
 router.get("/", protect, getDashboardData);
 
 module.exports = router; // Export the router

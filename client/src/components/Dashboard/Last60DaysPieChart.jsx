@@ -2,31 +2,19 @@ import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { addThousandSeparator } from '../../utils/helper';
 
-// This is the main component for the Last 60 Days Income Pie Chart.
 const Last60DaysPieChart = ({ data, totalIncome }) => {
-    // A palette of distinct colors to use for the chart slices.
     const COLORS = [
-        '#3b82f6', // Blue
-        '#f97316', // Orange
-        '#22c55e', // Green
-        '#ef4444', // Red
-        '#14b8a6', // Teal
-        '#eab308', // Yellow
-        '#6366f1', // Indigo
-        '#ec4899', // Pink
+        '#3b82f6', '#f97316', '#22c55e', '#ef4444',
+        '#14b8a6', '#eab308', '#6366f1', '#ec4899',
     ];
 
-    // Get all unique source names from the data
     const uniqueSources = [...new Set(data.map(item => item.source))];
     
-    // Create a "color map" object that assigns a color to each unique source
     const colorMap = uniqueSources.reduce((acc, source, index) => {
-        // Assign a color from the COLORS array. Use modulo to loop back if more sources than colors.
         acc[source] = COLORS[index % COLORS.length];
         return acc;
     }, {});
     
-    // Custom Tooltip component to show details on hover.
     const CustomTooltip = ({ active, payload }) => {
         if (active && payload && payload.length) {
             const dataPoint = payload[0];
@@ -65,7 +53,6 @@ const Last60DaysPieChart = ({ data, totalIncome }) => {
                             dataKey="amount"
                             nameKey="source"
                         >
-                            {/* Use the colorMap to look up the correct color */}
                             {data.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={colorMap[entry.source]} />
                             ))}

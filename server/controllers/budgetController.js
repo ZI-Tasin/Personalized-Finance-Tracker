@@ -1,46 +1,58 @@
 const Budget = require('../models/Budget');
 const Expense = require('../models/Expense');
 const { Types } = require('mongoose');
+const mongoose = require('mongoose');
+
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 exports.addBudget = async (req, res) => {
     try {
         const { category, amount, month } = req.body;
         const userId = req.user.id;
 
-        if (!category || !amount || !month) {
+        if (typeof category !== 'string' || !category.trim() || category.trim().length > 100 || !Number.isFinite(Number(amount)) || Number(amount) <= 0 || Number(amount) > 1e12 || !/^\d{4}-\d{2}$/.test(String(month || ''))) {
             return res.status(400).json({ message: 'Category, amount, and month are required.' });
         }
 
-        const budgetMonth = new Date(month);
-        budgetMonth.setDate(1);
-        budgetMonth.setHours(0, 0, 0, 0);
+        const budgetMonth = new Date(`${month}-01T00:00:00.000Z`);
+        if (!Number.isFinite(budgetMonth.getTime())) return res.status(400).json({ message: 'Enter a valid budget month.' });
+
+        const existingBudget = await Budget.findOne({
+            userId,
+            month: budgetMonth,
+            category: { $regex: new RegExp(`^${escapeRegex(category.trim())}$`, 'i') },
+        });
+        if (existingBudget) return res.status(409).json({ message: 'A budget for this category and month already exists.' });
 
         const newBudget = new Budget({
             userId,
-            category,
-            amount,
+            category: category.trim(),
+            amount: Number(amount),
             month: budgetMonth,
         });
 
         await newBudget.save();
-        res.status(201).json(newBudget);
+        return res.status(201).json(newBudget);
     } catch (error) {
-        // This will catch the duplicate budget error from the index.
         if (error.code === 11000) {
-            return res.status(400).json({ message: 'A budget for this category and month already exists.' });
+            return res.status(409).json({ message: 'A budget for this category and month already exists.' });
         }
-        res.status(500).json({ message: 'Server error', error: error.message });
+        console.error('Budget creation failed:', error.message);
+        return res.status(error.name === 'ValidationError' ? 400 : 500).json({ message: 'Unable to save budget.' });
     }
 };
 
-// This function will fetch all budgets for the user for the current month.
-// It will also calculate how much has been spent against each budget.
 exports.getBudgets = async (req, res) => {
     try {
         const userId = new Types.ObjectId(String(req.user.id));
         const today = new Date();
-        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-        const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        const requestedMonth = req.query.month;
+        if (requestedMonth && !/^\d{4}-(0[1-9]|1[0-2])$/.test(requestedMonth)) {
+            return res.status(400).json({ message: 'Month must use YYYY-MM format.' });
+        }
+        const [year, month] = requestedMonth ? requestedMonth.split('-').map(Number) : [today.getUTCFullYear(), today.getUTCMonth() + 1];
+        const startOfMonth = new Date(Date.UTC(year, month - 1, 1));
+        const endOfMonth = new Date(Date.UTC(year, month, 1));
 
         const budgets = await Budget.find({ userId, month: startOfMonth });
 
@@ -50,9 +62,8 @@ exports.getBudgets = async (req, res) => {
                     {
                         $match: {
                             userId: userId,
-                            // Using a case-insensitive regular expression
-                            category: { $regex: new RegExp(`^${budget.category}$`, 'i') },
-                            date: { $gte: startOfMonth, $lte: endOfMonth }
+                            category: { $regex: new RegExp(`^${escapeRegex(budget.category)}$`, 'i') },
+                            date: { $gte: startOfMonth, $lt: endOfMonth }
                         }
                     },
                     {
@@ -73,30 +84,22 @@ exports.getBudgets = async (req, res) => {
             })
         );
 
-        res.status(200).json(budgetsWithSpentAmount);
+        return res.status(200).json(budgetsWithSpentAmount);
 
     } catch (error) {
-        res.status(500).json({ message: 'Server error', error: error.message });
+        console.error('Budget lookup failed:', error.message);
+        return res.status(500).json({ message: 'Unable to load budgets.' });
     }
 };
 
-// This function will delete a budget.
 exports.deleteBudget = async (req, res) => {
     try {
-        const budget = await Budget.findById(req.params.id);
-
-        if (!budget) {
-            return res.status(404).json({ message: 'Budget not found.' });
-        }
-
-        // Perform an ownership check to make sure the user owns this budget.
-        if (budget.userId.toString() !== req.user.id) {
-            return res.status(401).json({ message: 'Not authorized.' });
-        }
-
-        await Budget.findByIdAndDelete(req.params.id);
-        res.status(200).json({ message: 'Budget deleted successfully.' });
+        if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Invalid budget ID.' });
+        const budget = await Budget.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
+        if (!budget) return res.status(404).json({ message: 'Budget not found.' });
+        return res.status(200).json({ message: 'Budget deleted successfully.' });
     } catch (error) {
-        res.status(500).json({ message: 'Server error', error: error.message });
+        console.error('Budget deletion failed:', error.message);
+        return res.status(500).json({ message: 'Unable to delete budget.' });
     }
 };

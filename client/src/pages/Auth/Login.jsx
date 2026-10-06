@@ -1,7 +1,7 @@
 import React, { useContext, useState } from 'react';
 import AuthLayout from '../../components/layouts/AuthLayout';
 import { useNavigate } from 'react-router-dom';
-import Input from '../../components/Inputs/Input';
+import Input from '../../components/Inputs/input';
 import { validateEmail } from '../../utils/helper';
 import { Link } from 'react-router-dom';
 import axiosInstance from '../../utils/axiosInstance';
@@ -12,36 +12,27 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(null);
+    const [submitting, setSubmitting] = useState(false);
 
     const { updateUser } = useContext(UserContext);
 
     const navigate = useNavigate();
     
-    // Handle login logic here
-    // This is a placeholder function for making an API call here
     const handleLogin = async (e) => {
         e.preventDefault();
         setError(null); // Reset error state before proceeding
 
-        // Validate input fields
         if (!email || !password) {
             setError('Email and password are required.');
             return;
         }
 
-        // Validate email format
         if (!validateEmail(email)) {
             setError('Please enter a valid email address.');
             return;
         }
 
-        // Validate password length
-        if (password.length < 8) {
-            setError('Password must be at least 8 characters long.');
-            return;
-        }
-
-        // TODO: Call login API here
+        setSubmitting(true);
         try {
             const response = await axiosInstance.post(API_PATHS.AUTH.LOGIN, {
                 email,
@@ -60,6 +51,8 @@ const Login = () => {
             } else {
                 setError('An error occurred while logging in. Please try again later.');
             }
+        } finally {
+            setSubmitting(false);
         }
     }
 
@@ -78,14 +71,18 @@ const Login = () => {
                         label="Email Address"
                         placeholder="Enter your email"
                         type="email"
+                        autoComplete="email"
+                        required
                     />
 
                     <Input
                         value={password}
                         onChange={({ target }) => setPassword(target.value)}
                         label="Password"
-                        placeholder="Enter your password minimum 8 characters"
+                        placeholder="Enter your password"
                         type="password"
+                        autoComplete="current-password"
+                        required
                     />
 
                     {error && <p className='text-red-500 text-xs pb-2.5'>{error}</p>}
@@ -93,8 +90,9 @@ const Login = () => {
                     <button
                         type="submit"
                         className='btn-primary'
+                        disabled={submitting}
                     >
-                        LOGIN
+                        {submitting ? 'Signing in…' : 'Sign in'}
                     </button>
 
                     <p className='text-[13px] text-slate-800 mt-3'>

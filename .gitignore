@@ -106,6 +106,7 @@ dist
 
 # Ignore user-uploaded content
 server/uploads/
+server/*_details.xlsx
 
 # Docusaurus cache and generated files
 .docusaurus
@@ -140,3 +141,8 @@ server/uploads/
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Local editor and operating system files
+.DS_Store
+.idea/
+.vscode/

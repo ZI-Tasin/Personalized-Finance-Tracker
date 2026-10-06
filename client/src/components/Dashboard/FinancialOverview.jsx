@@ -1,24 +1,20 @@
 import React from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'; // Added Tooltip to import
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { addThousandSeparator } from '../../utils/helper';
 
 const FinancialOverview = ({ totalIncome, totalExpenses, totalBalance }) => {
-    // Data for the pie chart - no changes here
     const data = [
         { name: 'Total Income', value: totalIncome },
         { name: 'Total Expenses', value: totalExpenses },
     ];
 
-    // Colors for the pie chart slices - no changes here
-    const COLORS = ['#FF8042', '#FF0000']; // Orange for Income, Red for Expenses
+    const COLORS = ['#FF8042', '#FF0000'];
 
-    // Enhanced Tooltip component
     const CustomTooltip = ({ active, payload }) => {
         if (active && payload && payload.length) {
             const dataPoint = payload[0];
             const total = totalIncome + totalExpenses;
             
-            // Safely calculate percentage, defaulting to 0 if total is 0
             const percentage = total === 0 ? 0 : (dataPoint.value / total) * 100;
 
             return (
@@ -36,7 +32,6 @@ const FinancialOverview = ({ totalIncome, totalExpenses, totalBalance }) => {
             <div className="w-full h-80 relative">
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                        {/* The Tooltip component is using custom function */}
                         <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(200, 200, 200, 0.1)' }} />
                         
                         <Pie

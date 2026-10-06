@@ -1,7 +1,4 @@
-const mongoose = require('mongoose'); // Import mongoose for MongoDB interaction
-
-// Define the Expense schema
-// This schema represents the structure of expense documents in the database
+const mongoose = require('mongoose');
 const ExpenseSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -9,20 +6,25 @@ const ExpenseSchema = new mongoose.Schema({
         ref: 'User'
     },
     icon: {
-        type: String
+        type: String,
+        maxlength: 32,
     },
     category: {
         type: String,
         required: true,
+        trim: true,
+        maxlength: 100,
     },
     amount: {
         type: Number,
-        required: true
+        required: true,
+        min: 0.01,
+        max: 1e12,
     },
     date: {
         type: Date,
         default: Date.now
     },
-}, { timestamps: true });  // Automatically manage createdAt and updatedAt fields
+}, { timestamps: true });
 
 module.exports = mongoose.model('Expense', ExpenseSchema);

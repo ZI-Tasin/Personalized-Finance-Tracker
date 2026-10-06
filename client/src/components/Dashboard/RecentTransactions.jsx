@@ -15,11 +15,10 @@ const RecentTransactions = ({ transactions }) => {
                     className="flex items-center gap-2 text-sm text-gray-500 hover:text-primary"
                     onClick={() => navigate('/expense')} // Or a dedicated transactions page
                 >
-                    See All <LuArrowRight />
+                    View expenses <LuArrowRight />
                 </button>
             </div>
 
-            {/* List of transactions */}
             <div className="space-y-2">
                 {transactions && transactions.length > 0 ? (
                     transactions.slice(0, 5).map((item) => (

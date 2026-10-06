@@ -1,31 +1,15 @@
-import React, { createContext, useState } from "react";
+import React, { useState } from 'react';
+import UserContext from './userContextValue';
 
-export const UserContext = createContext();
+export { UserContext };
 
 const UserProvider = ({ children }) => {
     const [user, setUser] = useState(null);
+    const updateUser = (userData) => setUser(userData);
+    const clearUser = () => setUser(null);
 
-    // Function to update user data
-    // This can be used after login or when user data changes
-    const updateUser = (userData) => {
-        setUser(userData);
-    };
-
-    // Function to clear user data
-    // This can be used for logout functionality or when user data is no longer needed
-    const clearUser = () => {
-        setUser(null);
-    };
-
-    // Optionally, user can load user data from local storage or an API when the provider mounts
     return (
-        <UserContext.Provider
-            value={{
-                user,
-                updateUser,
-                clearUser,
-            }}
-        >
+        <UserContext.Provider value={{ user, updateUser, clearUser }}>
             {children}
         </UserContext.Provider>
     );

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import IncomeOverview from '../../components/Income/IncomeOverview';
 import axiosInstance from '../../utils/axiosInstance';
@@ -15,17 +15,22 @@ const Income = () => {
 
 
   const [incomeData, setIncomeData] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [openDeleteAlert, setOpenDeleteAlert] = useState({
     show: false,
     data: null
   });
 
   const [OpenAddIncomeModal, setOpenAddIncomeModal] = useState(false);
+  const [editingIncome, setEditingIncome] = useState(null);
+  const [saving, setSaving] = useState(false);
 
-  // Function to fetch income details
-  const fetchIncomeDetails = async () => {
-    if (loading) return; // Prevent multiple fetches
+  const closeIncomeModal = () => {
+    setOpenAddIncomeModal(false);
+    setEditingIncome(null);
+  };
+
+  const fetchIncomeDetails = useCallback(async () => {
     setLoading(true);
 
     try {
@@ -37,13 +42,12 @@ const Income = () => {
         setIncomeData(response.data);
       }
     } catch (error) {
-      console.log("Failed to fetch income details", error);
+      toast.error(error.response?.data?.message || "Could not load income records.");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Function to handle add income
   const handleAddIncome = async (income) => {
     const { source, amount, date, icon } = income;
 
@@ -61,42 +65,40 @@ const Income = () => {
       return;
     }
 
+    setSaving(true);
     try {
-      await axiosInstance.post(API_PATHS.INCOME.ADD_INCOME, {
+      const payload = {
         source,
         amount,
         date,
         icon
-      });
+      };
+      if (editingIncome) await axiosInstance.put(API_PATHS.INCOME.UPDATE_INCOME(editingIncome._id), payload);
+      else await axiosInstance.post(API_PATHS.INCOME.ADD_INCOME, payload);
 
       setOpenAddIncomeModal(false);
-      toast.success("Income added successfully");
-      fetchIncomeDetails(); // Refresh income data after adding
+      setEditingIncome(null);
+      toast.success(editingIncome ? "Income updated successfully" : "Income added successfully");
+      await fetchIncomeDetails();
     } catch (error) {
-      console.error(
-        "Failed to add income",
-        error.response?.data?.message || error.message
-      );
+      toast.error(error.response?.data?.message || "Could not save this income record.");
+    } finally {
+      setSaving(false);
     }
   };
 
-  // Function to handle delete income
   const deleteIncome = async (id) => {
     try {
       await axiosInstance.delete(API_PATHS.INCOME.DELETE_INCOME(id));
 
       setOpenDeleteAlert({ show: false, data: null });
       toast.success("Income details deleted successfully");
-      fetchIncomeDetails(); // Refresh income data after deletion
+      fetchIncomeDetails();
     } catch (error) {
-      console.error(
-        "Failed to delete income",
-        error.response?.data?.message || error.message
-      );
+      toast.error(error.response?.data?.message || "Could not delete this income record.");
     }
   };
 
-  // Function to handle download income details
   const handleDownloadIncomeDetails = async () => {
     try {
       const response = await axiosInstance.get(
@@ -104,26 +106,23 @@ const Income = () => {
         { responseType: 'blob' }
       );
 
-      // Create a blob URL for the downloaded file
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', 'income_details.xlsx');
       document.body.appendChild(link);
       link.click();
-      link.parentNode.removeChild(link); // Clean up the link element
-      window.URL.revokeObjectURL(url); // Release the blob URL
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Error downloading income details", error);
-      toast.error("Failed to download income details. Please try again later.");
+      toast.error(error.response?.data?.message || "Failed to download income details. Please try again.");
     }
   }; 
 
   useEffect(() => {
     fetchIncomeDetails();
 
-    return () => {};
-  }, []);
+  }, [fetchIncomeDetails]);
 
   return (
     <DashboardLayout activeMenu="Income">
@@ -132,12 +131,13 @@ const Income = () => {
           <div className="">
             <IncomeOverview
               transactions={incomeData}
-              onAddIncome={() => setOpenAddIncomeModal(true)}
+              onAddIncome={() => { setEditingIncome(null); setOpenAddIncomeModal(true); }}
             />
           </div>
 
-          <IncomeList
+          {loading ? <p className="card text-gray-500">Loading income…</p> : <IncomeList
             transactions={incomeData}
+            onEdit={(income) => { setEditingIncome(income); setOpenAddIncomeModal(true); }}
             onDelete={(id) => {
               setOpenDeleteAlert({
                 show: true,
@@ -145,15 +145,15 @@ const Income = () => {
               });
             }}
             onDownload={handleDownloadIncomeDetails}
-          />
+          />}
         </div>
 
         <Modal
           isOpen={OpenAddIncomeModal}
-          onClose={() => setOpenAddIncomeModal(false)}
-          title="Add Income"
+          onClose={closeIncomeModal}
+          title={editingIncome ? 'Edit Income' : 'Add Income'}
         >
-          <AddIncomeForm onAddIncome={handleAddIncome} />
+          <AddIncomeForm onAddIncome={handleAddIncome} initialIncome={editingIncome} isSaving={saving} />
         </Modal>
 
         <Modal

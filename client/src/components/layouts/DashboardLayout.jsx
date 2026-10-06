@@ -6,7 +6,7 @@ import SideMenu from './SideMenu';
 const DashboardLayout = ({ children, activeMenu }) => {
     const { user } = useContext(UserContext);
     if (!user) {
-        return null;
+        return <div className="min-h-screen grid place-items-center text-gray-500" role="status">Loading your account…</div>;
     }
 
     return (

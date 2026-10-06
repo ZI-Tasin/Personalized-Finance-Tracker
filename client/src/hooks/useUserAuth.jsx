@@ -12,7 +12,7 @@ export const useUserAuth = () => {
     useEffect(() => {
         if (user) return;
 
-        let isMounted = true; // To prevent state updates if the component is unmounted
+        let isMounted = true;
 
         const fetchUserInfo = async () => {
             try {
@@ -21,8 +21,7 @@ export const useUserAuth = () => {
                 if (isMounted && response.data) {
                     updateUser(response.data);
                 }
-            } catch (error) {
-                console.error("Error fetching user info:", error);
+            } catch {
                 if (isMounted) {
                     clearUser();
                     navigate('/login');

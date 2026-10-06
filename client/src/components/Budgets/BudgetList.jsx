@@ -2,7 +2,6 @@ import React from 'react';
 import { LuTrash2 } from 'react-icons/lu';
 import { addThousandSeparator } from '../../utils/helper';
 
-// This is the main component that maps over the budgets.
 const BudgetList = ({ budgets, onDelete }) => {
     if (!budgets || budgets.length === 0) {
         return <p className="text-center text-gray-500 mt-8">No budgets created for this month yet. Add one to get started!</p>;
@@ -20,20 +19,18 @@ const BudgetList = ({ budgets, onDelete }) => {
 
 const BudgetCard = ({ budget, onDelete }) => {
     const { category, amount, spentAmount } = budget;
-    // RemainingAmount calculation.
     const remainingAmount = amount - spentAmount;
     const percentageSpent = amount > 0 ? (spentAmount / amount) * 100 : 0;
     
-    // Determine the progress bar color based on spending.
     const progressBarColor = percentageSpent > 90 ? 'bg-red-500' : percentageSpent > 70 ? 'bg-yellow-500' : 'bg-green-500';
 
     return (
-        // Using Tailwind CSS classes to create the card layout.
         <div className="bg-white p-6 rounded-2xl shadow-md shadow-gray-100 border border-gray-200/50 relative group">
-            {/* The delete button will only appear when I hover over the card. */}
             <button 
+                type="button"
+                aria-label={`Delete ${category} budget`}
                 onClick={() => onDelete(budget._id)} 
-                className="absolute top-4 right-4 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-4 right-4 text-gray-400 hover:text-red-500"
             >
                 <LuTrash2 />
             </button>
@@ -42,7 +39,6 @@ const BudgetCard = ({ budget, onDelete }) => {
             <p className="text-sm text-gray-500">Budget: ${addThousandSeparator(amount)}</p>
             
             <div className="mt-6">
-                {/* Progress Bar */}
                 <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
                     <div 
                         className={`${progressBarColor} h-2.5 rounded-full`} 
@@ -50,7 +46,6 @@ const BudgetCard = ({ budget, onDelete }) => {
                     ></div>
                 </div>
                 
-                {/* Spent vs. Remaining Text */}
                 <div className="flex justify-between text-sm text-gray-600">
                     <span>Spent: <span className="font-medium">${addThousandSeparator(spentAmount.toFixed(2))}</span></span>
                     <span>Remaining: <span className="font-medium">${addThousandSeparator(remainingAmount.toFixed(2))}</span></span>

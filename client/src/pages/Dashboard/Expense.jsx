@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { useUserAuth } from '../../hooks/useUserAuth';
 import axiosInstance from '../../utils/axiosInstance';
@@ -14,17 +14,22 @@ const Expense = () => {
   useUserAuth();  // Custom hook for authentication
 
   const [expenseData, setExpenseData] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [openDeleteAlert, setOpenDeleteAlert] = useState({
       show: false,
       data: null
     });
 
   const [OpenAddExpenseModal, setOpenAddExpenseModal] = useState(false);
+  const [editingExpense, setEditingExpense] = useState(null);
+  const [saving, setSaving] = useState(false);
 
-  // Function to fetch expense details
-  const fetchExpenseDetails = async () => {
-    if (loading) return; // Prevent multiple fetches
+  const closeExpenseModal = () => {
+    setOpenAddExpenseModal(false);
+    setEditingExpense(null);
+  };
+
+  const fetchExpenseDetails = useCallback(async () => {
     setLoading(true);
 
     try {
@@ -36,13 +41,12 @@ const Expense = () => {
         setExpenseData(response.data);
       }
     } catch (error) {
-      console.log("Failed to fetch expense details", error);
+      toast.error(error.response?.data?.message || "Could not load expenses.");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Function to handle add expense
   const handleAddExpense = async (expense) => {
     const { category, amount, date, icon } = expense;
 
@@ -60,59 +64,51 @@ const Expense = () => {
       return;
     }
 
+    setSaving(true);
     try {
-      await axiosInstance.post(API_PATHS.EXPENSE.ADD_EXPENSE, {
+      const payload = {
           category,
           amount,
           date,
           icon
-      });
+      };
+      if (editingExpense) await axiosInstance.put(API_PATHS.EXPENSE.UPDATE_EXPENSE(editingExpense._id), payload);
+      else await axiosInstance.post(API_PATHS.EXPENSE.ADD_EXPENSE, payload);
 
       setOpenAddExpenseModal(false);
-      toast.success("Expense added successfully");
-      fetchExpenseDetails(); // Refresh the expense list.
+      setEditingExpense(null);
+      toast.success(editingExpense ? "Expense updated successfully" : "Expense added successfully");
+      await fetchExpenseDetails();
+      if (editingExpense) return;
 
-      // IMMEDIATE NOTIFICATIONS
-      // After successfully adding the expense, silently check the budget status.
-      const budgetResponse = await axiosInstance.get(API_PATHS.BUDGET.GET_BUDGETS);
-      const budgets = budgetResponse.data;
-
-      // Find the specific budget that matches the category of the expense just added.
-      const relevantBudget = budgets.find(b => b.category.toLowerCase() === category.toLowerCase());
-      
-      if (relevantBudget) {
-        const percentageSpent = relevantBudget.amount > 0 ? (relevantBudget.spentAmount / relevantBudget.amount) * 100 : 0;
-        
-        // If this new expense pushed the spending over 90%, show a warning immediately.
-        if (percentageSpent > 90) {
-            toast.error(
-                `Warning: You have now spent over 90% of your budget for "${relevantBudget.category}"!`,
-                { duration: 6000 }
-            );
+      try {
+        const budgetResponse = await axiosInstance.get(API_PATHS.BUDGET.GET_BUDGETS());
+        const relevantBudget = budgetResponse.data.find((budget) => budget.category.toLowerCase() === category.trim().toLowerCase());
+        if (relevantBudget && relevantBudget.amount > 0 && relevantBudget.spentAmount / relevantBudget.amount > 0.9) {
+          toast.error(`You have spent over 90% of your budget for "${relevantBudget.category}".`, { duration: 6000 });
         }
+      } catch {
+        // The budget notice is optional; a budget lookup failure does not undo a saved expense.
       }
     } catch (error) {
-      console.error("Failed to add expense", error.response?.data?.message || error.message);
+      toast.error(error.response?.data?.message || "Could not save this expense.");
+    } finally {
+      setSaving(false);
     }
   };
 
-  // Function to handle delete expense
   const deleteExpense = async (id) => {
     try {
       await axiosInstance.delete(API_PATHS.EXPENSE.DELETE_EXPENSE(id));
 
       setOpenDeleteAlert({ show: false, data: null });
       toast.success("Expense details deleted successfully");
-      fetchExpenseDetails(); // Refresh expense data after deletion
+      fetchExpenseDetails();
     } catch (error) {
-      console.error(
-        "Failed to delete expense",
-        error.response?.data?.message || error.message
-      );
+      toast.error(error.response?.data?.message || "Could not delete this expense.");
     }
   };
 
-  // Function to handle download expense details
   const handleDownloadExpenseDetails = async () => {
     try {
       const response = await axiosInstance.get(
@@ -120,40 +116,38 @@ const Expense = () => {
         { responseType: 'blob' }
       );
 
-      // Create a blob URL for the downloaded file
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', 'expense_details.xlsx');
       document.body.appendChild(link);
       link.click();
-      link.parentNode.removeChild(link); // Clean up the link element
-      window.URL.revokeObjectURL(url); // Release the blob URL
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Error downloading expense details", error);
-      toast.error("Failed to download expense details. Please try again later.");
+      toast.error(error.response?.data?.message || "Failed to download expense details. Please try again.");
     }
   };
 
   useEffect(() => {
     fetchExpenseDetails();
 
-    return () => {};
-  }, []);
+  }, [fetchExpenseDetails]);
 
   return (
-    <DashboardLayout activeMenu="Expense">
+    <DashboardLayout activeMenu="Expenses">
       <div className="my-5 mx-auto">
         <div className="grid grid-cols-1 gap-6">
           <div className="">
             <ExpenseOverview
               transactions={expenseData}
-              onAddExpense={() => setOpenAddExpenseModal(true)}
+              onAddExpense={() => { setEditingExpense(null); setOpenAddExpenseModal(true); }}
             />
           </div>
 
-          <ExpenseList
+          {loading ? <p className="card text-gray-500">Loading expenses…</p> : <ExpenseList
             transactions={expenseData}
+            onEdit={(expense) => { setEditingExpense(expense); setOpenAddExpenseModal(true); }}
             onDelete={(id) => {
               setOpenDeleteAlert({
                 show: true,
@@ -161,15 +155,15 @@ const Expense = () => {
               });
             }}
             onDownload={handleDownloadExpenseDetails}
-          />
+          />}
         </div>
 
         <Modal
           isOpen={OpenAddExpenseModal}
-          onClose={() => setOpenAddExpenseModal(false)}
-          title="Add Expense"
+          onClose={closeExpenseModal}
+          title={editingExpense ? 'Edit Expense' : 'Add Expense'}
         >
-          <AddExpenseForm onAddExpense={handleAddExpense} />
+          <AddExpenseForm onAddExpense={handleAddExpense} initialExpense={editingExpense} isSaving={saving} />
         </Modal>
 
         <Modal

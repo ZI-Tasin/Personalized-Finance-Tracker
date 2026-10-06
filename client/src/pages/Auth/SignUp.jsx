@@ -1,7 +1,7 @@
 import React, { useContext, useState } from 'react';
 import AuthLayout from '../../components/layouts/AuthLayout';
 import { useNavigate } from 'react-router-dom';
-import Input from '../../components/Inputs/Input';
+import Input from '../../components/Inputs/input';
 import { validateEmail } from '../../utils/helper';
 import { Link } from 'react-router-dom';
 import axiosInstance from '../../utils/axiosInstance';
@@ -17,6 +17,7 @@ const SignUp = () => {
     const [password, setPassword] = useState('');
     
     const [error, setError] = useState(null);
+    const [submitting, setSubmitting] = useState(false);
 
     const { updateUser } = useContext(UserContext);
     const navigate = useNavigate();
@@ -40,6 +41,7 @@ const SignUp = () => {
             return;
         }
 
+        setSubmitting(true);
         try {
         let profileImageUrl = null;
 
@@ -68,6 +70,8 @@ const SignUp = () => {
         } else {
             setError('An unexpected error occurred. Please try again later.');
         }
+    } finally {
+        setSubmitting(false);
     }
 };
 
@@ -93,6 +97,9 @@ const SignUp = () => {
                             label="Full Name"
                             placeholder="Enter your full name"
                             type="text"
+                            autoComplete="name"
+                            required
+                            maxLength={100}
                         />
 
                         <Input
@@ -101,6 +108,8 @@ const SignUp = () => {
                             label="Email Address"
                             placeholder="Enter your email"
                             type="email"
+                            autoComplete="email"
+                            required
                         />
                         
                         <div className='col-span-2'>
@@ -109,7 +118,11 @@ const SignUp = () => {
                                 onChange={({ target }) => setPassword(target.value)}
                                 label="Password"
                                 placeholder="Enter your password minimum 8 characters"
-                                type="password"
+                            type="password"
+                            autoComplete="new-password"
+                            required
+                            minLength={8}
+                            maxLength={128}
                             />
                         </div>
                     </div>
@@ -119,8 +132,9 @@ const SignUp = () => {
                     <button
                         type="submit"
                         className='btn-primary mt-4'
+                        disabled={submitting}
                     >
-                        Create Account
+                        {submitting ? 'Creating account…' : 'Create account'}
                     </button>
 
                     <p className='text-[13px] text-slate-800 mt-3'>

@@ -1,89 +1,59 @@
-const XLSX = require('xlsx'); // Import the XLSX library for Excel file handling
-const Income = require('../models/Income'); // Import the Income model
+const XLSX = require('xlsx');
+const Income = require('../models/Income');
+const mongoose = require('mongoose');
 
+const validId = (id) => mongoose.isValidObjectId(id);
+const validAmount = (amount) => Number.isFinite(Number(amount)) && Number(amount) > 0 && Number(amount) <= 1e12;
+const validDate = (date) => date && Number.isFinite(new Date(date).getTime());
 
-// Add Income source
 exports.addIncome = async (req, res) => {
-    const userId = req.user._id; // Get user ID from the authenticated user
-
+    const { source, amount, date, icon } = req.body;
+    if (typeof source !== 'string' || !source.trim() || source.trim().length > 100 || !validAmount(amount) || !validDate(date)) {
+        return res.status(400).json({ message: 'Provide a source, a positive amount, and a valid date.' });
+    }
     try {
-        const { icon, source, amount, date } = req.body; // Destructure income data from request body
-
-        if (!source || !amount || !date) {
-            return res.status(400).json({ message: 'All fields are required.' });
-        }
-
-        const newIncome = new Income({
-            userId,
-            icon,
-            source,
-            amount,
-            date: new Date(date) // Set current date as the income date
-        });
-
-        await newIncome.save(); // Save the new income document to the database
-        res.status(200).json(newIncome); // Respond with the created income document
+        const income = await Income.create({ userId: req.user.id, source: source.trim(), amount: Number(amount), date: new Date(date), icon: typeof icon === 'string' ? icon.slice(0, 32) : '' });
+        return res.status(201).json(income);
     } catch (error) {
-        console.error(error); // Log the error
-        res.status(500).json({ message: 'Server error' }); // Handle server errors
+        console.error('Income creation failed:', error.message);
+        return res.status(error.name === 'ValidationError' ? 400 : 500).json({ message: error.name === 'ValidationError' ? 'Invalid income details.' : 'Unable to save income.' });
     }
 };
 
-// Get All Income sources
+exports.updateIncome = async (req, res) => {
+    if (!validId(req.params.id)) return res.status(400).json({ message: 'Invalid income ID.' });
+    const { source, amount, date, icon } = req.body;
+    if (typeof source !== 'string' || !source.trim() || source.trim().length > 100 || !validAmount(amount) || !validDate(date)) {
+        return res.status(400).json({ message: 'Provide a source, a positive amount, and a valid date.' });
+    }
+    const income = await Income.findOneAndUpdate(
+        { _id: req.params.id, userId: req.user.id },
+        { source: source.trim(), amount: Number(amount), date: new Date(date), icon: typeof icon === 'string' ? icon.slice(0, 32) : '' },
+        { new: true, runValidators: true }
+    );
+    if (!income) return res.status(404).json({ message: 'Income not found.' });
+    return res.json(income);
+};
+
 exports.getAllIncomes = async (req, res) => {
-    const userId = req.user._id; // Get user ID from the authenticated user
-
-    try {
-        const income = await Income.find({ userId }).sort({ date: -1 }); // Find all incomes for the user, sorted by date
-        res.json(income); // Respond with the list of incomes
-    } catch (error) {
-        console.error(error); // Log the error
-        res.status(500).json({ message: 'Server error' }); // Handle server errors
-    }
+    const income = await Income.find({ userId: req.user.id }).sort({ date: -1, createdAt: -1 });
+    return res.json(income);
 };
 
-// Delete Income source
 exports.deleteIncome = async (req, res) => {
-    try {
-        const income = await Income.findById(req.params.id); // Find the income document by ID
-
-        if (!income) {
-            return res.status(404).json({ message: 'Income not found' }); // Handle case where income is not found
-        }
-
-        // Check if the income belongs to the authenticated user
-        if (income.userId.toString() !== req.user._id.toString()) {
-            return res.status(403).json({ message: 'Not authorized to delete this income' }); // Handle unauthorized access
-        }
-
-        await Income.findByIdAndDelete(req.params.id); // Delete the income document by ID
-        res.json({ message: 'Income deleted successfully' }); // Respond with success message
-    } catch (error) {
-        console.error(error); // Log the error
-        res.status(500).json({ message: 'Server error' }); // Handle server errors
-    }
+    if (!validId(req.params.id)) return res.status(400).json({ message: 'Invalid income ID.' });
+    const income = await Income.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
+    if (!income) return res.status(404).json({ message: 'Income not found.' });
+    return res.json({ message: 'Income deleted successfully.' });
 };
 
-// Download Income data as Excel
 exports.downloadIncomeExcel = async (req, res) => {
-    const userId = req.user._id; // Get user ID from the authenticated user
-
-    try {
-        const income = await Income.find({ userId }).sort({ date: -1 }); // Find all incomes for the user, sorted by date
-
-        const data = income.map((item) => ({
-            Source: item.source,
-            Amount: item.amount,
-            Date: item.date,
-        }));
-
-        const wb = XLSX.utils.book_new(); // Create a new workbook
-        const ws = XLSX.utils.json_to_sheet(data); // Convert income data to a worksheet
-        XLSX.utils.book_append_sheet(wb, ws, 'Income'); // Append the worksheet to the workbook
-        XLSX.writeFile(wb, 'income_details.xlsx'); // Write the workbook to a file
-        res.download('income_details.xlsx'); // Send the file as a download response
-    } catch (error) {
-        console.error(error); // Log the error
-        res.status(500).json({ message: 'Server error' }); // Handle server errors
-    }
+    const income = await Income.find({ userId: req.user.id }).sort({ date: -1 });
+    const rows = income.map((item) => ({ Source: item.source, Amount: item.amount, Date: item.date }));
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(rows), 'Income');
+    const file = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="income_details.xlsx"');
+    return res.send(file);
 };

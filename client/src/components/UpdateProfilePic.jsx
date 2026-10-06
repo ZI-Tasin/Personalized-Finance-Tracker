@@ -31,8 +31,7 @@ const UpdateProfilePic = ({ onClose }) => {
             }
 
         } catch (error) {
-            toast.error("Failed to update profile picture.");
-            console.error(error);
+            toast.error(error.response?.data?.message || "Failed to update profile picture.");
         }
     };
 

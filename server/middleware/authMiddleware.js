@@ -1,18 +1,19 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User'); // Import the User model
+const mongoose = require('mongoose');
+const User = require('../models/User');
 
 exports.protect = async (req, res, next) => {
-    let token = req.headers.authorization?.split(' ')[1]; // Extract token from Authorization header
-    if (!token) {
-        return res.status(401).json({ message: 'Not authorized, no token' }); // If no token, return unauthorized
-    }
-
+    const [scheme, token] = (req.headers.authorization || '').split(' ');
+    if (scheme !== 'Bearer' || !token) return res.status(401).json({ message: 'Authentication required.' });
+    let decoded;
     try {
-        // Verify the token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = await User.findById(decoded.id).select('-password'); // Find user by ID and exclude password
-        next(); // Proceed to the next middleware or route handler
+        decoded = jwt.verify(token, process.env.JWT_SECRET);
     } catch (error) {
-        res.status(401).json({ message: 'Not authorized, token failed' }); // If token verification fails, return unauthorized
+        return res.status(401).json({ message: 'Session is invalid or expired. Please sign in again.' });
     }
+    if (!mongoose.isValidObjectId(decoded.id)) return res.status(401).json({ message: 'Session is invalid. Please sign in again.' });
+    const user = await User.findById(decoded.id).select('_id fullName email profileImageUrl');
+    if (!user) return res.status(401).json({ message: 'Session is no longer valid. Please sign in again.' });
+    req.user = user;
+    return next();
 };

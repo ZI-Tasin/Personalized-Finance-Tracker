@@ -1,20 +1,19 @@
-const express = require('express'); // Import express
-
+const express = require('express');
 const {
     addExpense,
+    updateExpense,
     getAllExpense,
     deleteExpense,
-    downloadExpenseExcel
-} = require('../controllers/expenseController'); // Import expense controller functions
+    downloadExpenseExcel,
+} = require('../controllers/expenseController');
+const { protect } = require('../middleware/authMiddleware');
 
-const { protect } = require('../middleware/authMiddleware'); // Import authentication middleware
+const router = express.Router();
 
-const router = express.Router(); // Create a new router instance
+router.post('/add', protect, addExpense);
+router.put('/:id', protect, updateExpense);
+router.get('/get', protect, getAllExpense);
+router.delete('/:id', protect, deleteExpense);
+router.get('/downloadexcel', protect, downloadExpenseExcel);
 
-// Define routes for expense-related endpoints
-router.post('/add', protect, addExpense); // Route to add expense
-router.get('/get', protect, getAllExpense); // Route to get all expenses
-router.delete('/:id', protect, deleteExpense); // Route to delete expense by ID
-router.get('/downloadexcel', protect, downloadExpenseExcel); // Route to download expense data as Excel
-
-module.exports = router; // Export the router
+module.exports = router;

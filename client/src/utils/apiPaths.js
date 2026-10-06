@@ -1,7 +1,5 @@
-export const BASE_URL = 'http://localhost:8000';
+export const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
-// API paths for the Personalized Finance Tracker application.
-// These paths are used to interact with the backend services for authentication, dashboard, income, and expenses.
 export const API_PATHS = {
     AUTH: {
         LOGIN: '/api/v1/auth/login',
@@ -17,16 +15,16 @@ export const API_PATHS = {
     INCOME: {
         ADD_INCOME: '/api/v1/income/add',
         GET_ALL_INCOME: '/api/v1/income/get',
-        // Function to generate the path for deleting a specific income record
         DELETE_INCOME: (incomeId) => `/api/v1/income/${incomeId}`,
+        UPDATE_INCOME: (incomeId) => `/api/v1/income/${incomeId}`,
         DOWNLOAD_INCOME: '/api/v1/income/downloadexcel',
     },
 
     EXPENSE: {
         ADD_EXPENSE: '/api/v1/expense/add',
         GET_ALL_EXPENSE: '/api/v1/expense/get',
-        // Function to generate the path for deleting a specific expense record
         DELETE_EXPENSE: (expenseId) => `/api/v1/expense/${expenseId}`,
+        UPDATE_EXPENSE: (expenseId) => `/api/v1/expense/${expenseId}`,
         DOWNLOAD_EXPENSE: '/api/v1/expense/downloadexcel',
     },
 
@@ -36,8 +34,7 @@ export const API_PATHS = {
 
     BUDGET: {
     ADD_BUDGET: '/api/v1/budget/add',
-    GET_BUDGETS: '/api/v1/budget/get',
+        GET_BUDGETS: (month) => `/api/v1/budget/get${month ? `?month=${encodeURIComponent(month)}` : ''}`,
     DELETE_BUDGET: (budgetId) => `/api/v1/budget/${budgetId}`,
     },
 };
-

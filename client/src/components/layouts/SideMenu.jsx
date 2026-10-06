@@ -6,7 +6,7 @@ import CharAvatar from '../Cards/CharAvatar';
 import Modal from '../Modal/Modal';
 import UpdateProfilePic from '../UpdateProfilePic';
 
-const SideMenu = ({ activeMenu }) => {
+const SideMenu = ({ activeMenu, onNavigate }) => {
     const { user, clearUser } = useContext(UserContext);
     const navigate = useNavigate();
 
@@ -14,7 +14,7 @@ const SideMenu = ({ activeMenu }) => {
 
     const handleLogout = () => {
         clearUser(); 
-        localStorage.clear();
+        localStorage.removeItem('token');
 
         navigate('/login', { replace: true });
     };
@@ -22,8 +22,10 @@ const SideMenu = ({ activeMenu }) => {
     const handleClick = (path) => {
         if (path === '/logout') {
             handleLogout();
+            onNavigate?.();
         } else {
             navigate(path);
+            onNavigate?.();
         }
     };
     
@@ -32,7 +34,7 @@ const SideMenu = ({ activeMenu }) => {
             <button onClick={() => setIsModalOpen(true)} className="flex flex-col items-center justify-center gap-3 mt-3 mb-7 w-full">
                 {user?.profileImageUrl ? (
                     <img
-                        src={user.profileImageUrl} // I removed the || "" to be cleaner
+                        src={user.profileImageUrl}
                         alt="Profile"
                         className="w-20 h-20 bg-slate-400 rounded-full object-cover"
                     />
@@ -50,9 +52,9 @@ const SideMenu = ({ activeMenu }) => {
             </button>
         </div>
 
-        {SIDE_MENU_DATA.map((item, index) => (
+        {SIDE_MENU_DATA.map((item) => (
             <button
-                key={`menu_${index}`}
+                key={item.id}
                 className={`w-full flex items-center gap-4 text-[15px] ${
                     activeMenu == item.label ? "text-white bg-primary" : ""
                 } py-3 px-6 rounded-lg mb-3`}

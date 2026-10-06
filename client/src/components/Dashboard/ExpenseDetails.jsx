@@ -4,12 +4,10 @@ import { LuArrowRight } from 'react-icons/lu';
 import moment from 'moment';
 import TransactionInfoCard from '../Cards/TransactionInfoCard';
 
-// This component will show a filtered list of recent transactions that are expenses.
 const ExpenseDetails = ({ transactions }) => {
     const navigate = useNavigate();
 
-    // Filtering the transactions array to only include items of type 'expense'.
-    const expenseTransactions = transactions.filter(t => t.type === 'expense').slice(0, 3); // Show max 3
+    const expenseTransactions = transactions.filter(t => t.type === 'expense').slice(0, 3);
 
     return (
         <div className="bg-white p-6 rounded-2xl shadow-md shadow-gray-100 border border-gray-200/50">
@@ -23,13 +21,12 @@ const ExpenseDetails = ({ transactions }) => {
                 </button>
             </div>
 
-            {/* Map over the filtered list to display each expense. */}
             <div className="space-y-2">
                 {expenseTransactions.length > 0 ? (
                     expenseTransactions.map((item) => (
                         <TransactionInfoCard
                             key={item._id}
-                            title={item.category} // Using 'category' for expenses
+                            title={item.category}
                             icon={item.icon}
                             date={moment(item.date).format("Do MMM YYYY")}
                             amount={item.amount}
